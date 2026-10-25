@@ -236,16 +236,36 @@ async function sendOtp(email, code, purpose) {
   });
 }
 
-// ============================================================
-// HEALTH
-// ============================================================
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    ok: true,
-    version: "2.1.0",
-    pushNotifications: firebaseReady,
+ // ============================================================
+ // ROOT + HEALTH
+ // ============================================================
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "NearKart backend is running",
   });
+});
+
+app.get("/api/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+
+    res.status(200).json({
+      ok: true,
+      version: "2.1.0",
+      database: "connected",
+      pushNotifications: firebaseReady,
+    });
+  } catch (error) {
+    console.error("Health check failed:", error.message);
+
+    res.status(500).json({
+      ok: false,
+      message: "Database connection failed",
+    });
+  }
 });
 
 // ============================================================
@@ -3716,9 +3736,35 @@ app.post('/api/delivery/documents', auth, deliveryOnly, async (req, res) => {
 // START SERVER AFTER DATABASE SCHEMA INITIALIZATION
 // ------------------------------------------------------------
 
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "NearKart backend is running"
+  });
+});
+
+app.get("/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+
+    res.status(200).json({
+      success: true,
+      message: "Backend and database are connected"
+    });
+  } catch (error) {
+    console.error("Health check failed:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed"
+    });
+  }
+});
+
 ensureDeliverySchema()
   .then(async () => {
-    await pool.query('SELECT 1');
+    await pool.query("SELECT 1");
 
     app.listen(PORT, () => {
       console.log(
@@ -3728,10 +3774,11 @@ ensureDeliverySchema()
   })
   .catch((e) => {
     console.error(
-      'Database schema initialization failed:',
+      "Database schema initialization failed:",
       e.message
     );
     process.exit(1);
   });
+
 
 
